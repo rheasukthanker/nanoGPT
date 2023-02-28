@@ -40,7 +40,7 @@ def plot_losses(losses, verbosity, val_losses=None):
     plt.show();
 
 
-def get_batch(train_data, valid_data, split: str, block_size: int = 8, batch_size: int = 4, device: str = None):
+def get_batch( split: str, block_size: int = 8, batch_size: int = 4, device: str = None):
     """ Gets a randomized batch from the split of data chosen.
 
     Arguments
@@ -90,8 +90,6 @@ def estimate_loss(train_data, valid_data, model: nn.Module, eval_iters: int):
 
 
 def train_and_evaluate_model(
-    train_data,
-    valid_data,
     model: nn.Module,
     block_size: int,
     batch_size: int,
@@ -115,7 +113,7 @@ def train_and_evaluate_model(
     for iter in tqdm(range(num_train_steps)):
 
         # sample a batch of data
-        xb, yb = get_batch(train_data, valid_data, 'train', block_size, batch_size, device)
+        xb, yb = get_batch('train', block_size, batch_size, device)
 
         # evaluate loss on the batch
         logits, loss = model(xb, yb)
