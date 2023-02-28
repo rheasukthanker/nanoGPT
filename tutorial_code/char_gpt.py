@@ -47,7 +47,7 @@ def plot_losses(losses, verbosity, val_losses=None):
     plt.xlim(0, len(losses))
     plt.show();
 
-def configure_optimizers(self, weight_decay, learning_rate, betas, device_type):
+def configure_optimizers(model, weight_decay, learning_rate, betas, device_type, weight_tying):
         """
         This long function is unfortunately doing something very simple and is being very defensive:
         We are separating out all parameters of the model into two buckets: those that will experience
@@ -60,7 +60,7 @@ def configure_optimizers(self, weight_decay, learning_rate, betas, device_type):
         no_decay = set()
         whitelist_weight_modules = (torch.nn.Linear, )
         blacklist_weight_modules = (torch.nn.LayerNorm, torch.nn.Embedding)
-        for mn, m in self.named_modules():
+        for mn, m in model.named_modules():
             for pn, p in m.named_parameters():
                 fpn = '%s.%s' % (mn, pn) if mn else pn # full param name
                 # random note: because named_modules and named_parameters are recursive
@@ -75,19 +75,22 @@ def configure_optimizers(self, weight_decay, learning_rate, betas, device_type):
                 elif pn.endswith('weight') and isinstance(m, blacklist_weight_modules):
                     # weights of blacklist modules will NOT be weight decayed
                     no_decay.add(fpn)
-
+        #print(no_decay)
+        #print(decay)
         # subtle: 'transformer.wte.weight' and 'lm_head.weight' are tied, so they
         # will appear in the no_decay and decay sets respectively after the above.
         # In addition, because named_parameters() doesn't return duplicates, it
         # will only return the first occurence, key'd by 'transformer.wte.weight', below.
         # so let's manually remove 'lm_head.weight' from decay set. This will include
         # this tensor into optimization via transformer.wte.weight only, and not decayed.
-        decay.remove('lm_head.weight')
+        if weight_tying:
+           decay.remove('lm_head.weight')
 
         # validate that we considered every parameter
-        param_dict = {pn: p for pn, p in self.named_parameters()}
+        param_dict = {pn: p for pn, p in model.named_parameters()}
         inter_params = decay & no_decay
         union_params = decay | no_decay
+        #print(len(param_dict.keys() - union_params))
         assert len(inter_params) == 0, "parameters %s made it into both decay/no_decay sets!" % (str(inter_params), )
         assert len(param_dict.keys() - union_params) == 0, "parameters %s were not separated into either decay/no_decay set!" \
                                                     % (str(param_dict.keys() - union_params), )
@@ -231,7 +234,7 @@ def train_and_evaluate_nanoGPT(
 ):
     model.train()
     if optimizer is None:
-        optimizer = configure_optimizers(model,weight_decay=0.01,learning_rate=6e-4,betas=(0.9,0.95))
+        optimizer = configure_optimizers(model,weight_decay=0.01,learning_rate=6e-4,betas=(0.9,0.95),device_type=device, weight_tying=model.weight_tying)
         #torch.optim.AdamW(
         #    model.parameters(), lr=kwargs["learning_rate"]
         #)
@@ -595,6 +598,7 @@ class NanoGPT(CharGPT):
                 prenormalize=prenormalize,
             ) for _ in range(n_layers)]  # stacks the layers of Transformer blocks
         )
+        self.weight_tying = weight_tying
         if weight_tying:
             # weight-tying, https://paperswithcode.com/method/weight-tying
             self.token_embedding_table.weight = self.lm_head.weight
@@ -692,3 +696,53 @@ valid_data = data[n:]
     device="cpu",
 )
 train_and_evaluate_model(model,8,2,learning_rate=0.001 )'''
+'''BLOCK_SIZE = 64
+EMBED_SIZE = 128
+NUM_HEADS = 6
+ACTIVATION = "gelu"
+PRENORM = True
+WIDE_FACTOR = 4
+DROPOUT = 0.0
+LAYERS = 6
+WEIGHT_TYING = False
+FLASH = True
+INIT_TYPE = "custom"
+
+# Training HPs
+BATCH_SIZE = 32
+LEARNING_RATE = 1e-3
+
+# Experiment HPs
+VOCAB_SIZE = 50304
+NUM_TRAIN_STEPS = 10000
+VERBOSTIY_LEN = 1000
+EVAL_ITERS = 500
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+model = NanoGPT(
+    vocab_size=VOCAB_SIZE,
+    n_layers=LAYERS,
+    block_size=BLOCK_SIZE,
+    n_embed=EMBED_SIZE,
+    num_heads=NUM_HEADS,
+    wide_factor=WIDE_FACTOR,
+    activation=ACTIVATION,
+    dropout=DROPOUT,
+    prenormalize=PRENORM,
+    flash = FLASH,
+    device=DEVICE,
+    weight_tying=WEIGHT_TYING,
+    init_type=INIT_TYPE,
+)
+model = model.to(DEVICE)
+train_and_evaluate_nanoGPT(
+    model=model,
+    block_size=BLOCK_SIZE,
+    batch_size=BATCH_SIZE,
+    optimizer=None,  # internally uses AdamW, pass an optimizer to override
+    num_train_steps=NUM_TRAIN_STEPS, 
+    verbosity_len=VERBOSTIY_LEN, 
+    eval_iters=EVAL_ITERS,
+    plot_loss=True, 
+    device=DEVICE,
+    learning_rate=LEARNING_RATE  # part of kwargs
+);'''
