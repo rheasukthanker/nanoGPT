@@ -40,7 +40,7 @@ def plot_losses(losses, verbosity, val_losses=None):
     plt.show();
 
 
-def get_batch(split: str, block_size: int = 8, batch_size: int = 4, device: str = None):
+def get_batch(train_data, valid_data, split: str, block_size: int = 8, batch_size: int = 4, device: str = None):
     """ Gets a randomized batch from the split of data chosen.
 
     Arguments
@@ -73,7 +73,7 @@ def get_batch(split: str, block_size: int = 8, batch_size: int = 4, device: str 
 
 
 @torch.no_grad()
-def estimate_loss(model: nn.Module, eval_iters: int):
+def estimate_loss(train_data, valid_data, model: nn.Module, eval_iters: int):
     """ Function to evaluate the model on train & valid splits.
     """
     out = {}
@@ -81,7 +81,7 @@ def estimate_loss(model: nn.Module, eval_iters: int):
     for split in ['train', 'valid']:
         losses = torch.zeros(eval_iters)
         for k in range(eval_iters):
-            X, Y = get_batch(split)
+            X, Y = get_batch(train_data, valid_data, split)
             logits, loss = model(X, Y)
             losses[k] = loss.item()
         out[split] = losses.mean()
@@ -90,6 +90,8 @@ def estimate_loss(model: nn.Module, eval_iters: int):
 
 
 def train_and_evaluate_model(
+    train_data,
+    valid_data,
     model: nn.Module,
     block_size: int,
     batch_size: int,
@@ -113,7 +115,7 @@ def train_and_evaluate_model(
     for iter in tqdm(range(num_train_steps)):
 
         # sample a batch of data
-        xb, yb = get_batch('train', block_size, batch_size, device)
+        xb, yb = get_batch(train_data, valid_data, 'train', block_size, batch_size, device)
 
         # evaluate loss on the batch
         logits, loss = model(xb, yb)
@@ -125,7 +127,7 @@ def train_and_evaluate_model(
 
         # every once in a while evaluate the loss on train and val sets
         if iter % verbosity_len == 0 or iter == num_train_steps - 1:
-            _losses = estimate_loss(model, eval_iters)
+            _losses = estimate_loss(train_data, valid_data, model, eval_iters)
             train_losses.append(_losses['train'])
             valid_losses.append(_losses['valid'])
             print()
@@ -545,3 +547,17 @@ data = torch.tensor(encode(text), dtype=torch.long)
 n = int(train_size * len(data))
 train_data = data[:n]
 valid_data = data[n:]
+'''model = CharGPT(
+    vocab_size,
+    3,
+    block_size=8,
+    n_embed=32,
+    num_heads=2,
+    wide_factor=4,
+    activation="relu",
+    dropout=0.1,
+    flash=True,
+    prenormalize=False,
+    device="cpu",
+)
+train_and_evaluate_model(train_data, valid_data,model,8,2,learning_rate=0.001 )'''
