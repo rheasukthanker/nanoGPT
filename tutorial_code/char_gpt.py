@@ -434,6 +434,7 @@ class NanoGPT(CharGPT):
             activation: str = "relu",  # could also be "gelu"
             dropout: float = 0.0,
             prenormalize: bool = False,
+            flash: bool = False,
             device: str = None,
             weight_tying: str = False,
             init_type: str = None
@@ -447,6 +448,7 @@ class NanoGPT(CharGPT):
             wide_factor=wide_factor,
             activation=activation,
             dropout=dropout,
+            flash = flash,
             prenormalize=prenormalize,
             device=device,
         )
@@ -459,6 +461,7 @@ class NanoGPT(CharGPT):
                 wide_factor=wide_factor,
                 activation=activation,
                 dropout=dropout,
+                flash = flash,
                 prenormalize=prenormalize,
             ) for _ in range(n_layers)]  # stacks the layers of Transformer blocks
         )
@@ -558,4 +561,4 @@ valid_data = data[n:]
     prenormalize=False,
     device="cpu",
 )
-train_and_evaluate_model(train_data, valid_data,model,8,2,learning_rate=0.001 )'''
+train_and_evaluate_model(model,8,2,learning_rate=0.001 )'''
