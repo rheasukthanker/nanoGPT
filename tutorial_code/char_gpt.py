@@ -81,7 +81,7 @@ def estimate_loss(train_data, valid_data, model: nn.Module, eval_iters: int):
     for split in ['train', 'valid']:
         losses = torch.zeros(eval_iters)
         for k in range(eval_iters):
-            X, Y = get_batch(train_data, valid_data, split)
+            X, Y = get_batch(split)
             logits, loss = model(X, Y)
             losses[k] = loss.item()
         out[split] = losses.mean()
