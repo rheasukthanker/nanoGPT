@@ -231,7 +231,7 @@ def train_and_evaluate_nanoGPT(
 ):
     model.train()
     if optimizer is None:
-        optimizer = configure_optimizers(model,weight_decay=0.01,lr=6e-4,betas=(0.9,0.95))
+        optimizer = configure_optimizers(model,weight_decay=0.01,learning_rate=6e-4,betas=(0.9,0.95))
         #torch.optim.AdamW(
         #    model.parameters(), lr=kwargs["learning_rate"]
         #)
