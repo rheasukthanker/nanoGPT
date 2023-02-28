@@ -241,7 +241,7 @@ class MultiHeadAttention(nn.Module):
         """
         super().__init__()
         self.heads = nn.ModuleList(
-            [Head(block_size, n_embed, head_size, flash) for _ in range(num_heads)]
+            [Head(block_size, n_embed, head_size, flash=flash) for _ in range(num_heads)]
         )
         # linear FC layer
         self.proj = nn.Linear(head_size * num_heads, n_embed)
@@ -296,7 +296,7 @@ class Block(nn.Module):
         # setting head_size to be a factor of other dimensions
         head_size = n_embed // num_heads
         # the multi-headed self-attention (msa)
-        self.msa = MultiHeadAttention(block_size, n_embed, head_size, num_heads, flash)
+        self.msa = MultiHeadAttention(block_size, n_embed, head_size, num_heads, flash=flash)
         self.ffwd = FeedForward(n_embed, wide_factor, activation, dropout)
 
         self.prenormalize = prenormalize
