@@ -13,10 +13,11 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 warmup_iters = 100
-lr_decay_iters = 1000
-min_lr = 6e-5
-learning_rate = 6e-4
+lr_decay_iters = 10000
+min_lr = 1e-4
+learning_rate = 1e-3
 decay_lr = True
+
 def to_tokens(example):
     """Function to tokenize a string using BPE.
     """
@@ -141,7 +142,7 @@ def get_batch( split: str, block_size: int = 8, batch_size: int = 4, device: str
 
 
 @torch.no_grad()
-def estimate_loss(train_data, valid_data, model: nn.Module, eval_iters: int):
+def estimate_loss(model: nn.Module, eval_iters: int):
     """ Function to evaluate the model on train & valid splits.
     """
     out = {}
@@ -193,7 +194,7 @@ def train_and_evaluate_model(
 
         # every once in a while evaluate the loss on train and val sets
         if iter % verbosity_len == 0 or iter == num_train_steps - 1:
-            _losses = estimate_loss(train_data, valid_data, model, eval_iters)
+            _losses = estimate_loss(model, eval_iters)
             train_losses.append(_losses['train'])
             valid_losses.append(_losses['valid'])
             print()
