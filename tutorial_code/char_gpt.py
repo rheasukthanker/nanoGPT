@@ -260,7 +260,7 @@ def train_and_evaluate_nanoGPT(
 
         # every once in a while evaluate the loss on train and val sets
         if iter % verbosity_len == 0 or iter == num_train_steps - 1:
-            _losses = estimate_loss(train_data, valid_data, model, eval_iters)
+            _losses = estimate_loss(model, eval_iters)
             train_losses.append(_losses['train'])
             valid_losses.append(_losses['valid'])
             print()
